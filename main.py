@@ -65,6 +65,9 @@ def process_entity_relations(entity_relations_str, verbose=True):
 
 
 def stanford_ner(filename, verbose=True, absolute_path=None):
+    '''
+    Takes input as a filename.
+    '''
     out = filename.split('.')[0] + '_out.txt'
 
     command = ''
@@ -108,20 +111,77 @@ def stanford_ner(filename, verbose=True, absolute_path=None):
         debug_print('wrote to out.pkl', verbose)
     return results
 
+def stanford_ner_text(text, verbose=True, absolute_path=None):
+    '''
+    stanford_ner except taking text as input instead of filename
+    '''
+    out = filename.split('.')[0] + '_out.txt'
 
-def main(args):
-    arg_p = arg_parse().parse_args(args[1:])
-    filename = arg_p.filename
-    verbose = arg_p.verbose
-    debug_print(arg_p, verbose)
-    if filename is None:
-        print('please provide a text file containing your input. Program will exit.')
-        exit(1)
+    command = ''
+    if absolute_path is not None:
+        command = 'cd {};'.format(absolute_path)
+    else:
+        filename = '../{}'.format(filename)
+
+    command += 'cd {}; {} -mx1g -cp "*:lib/*" edu.stanford.nlp.ie.NERClassifierCombiner ' \
+               '-ner.model classifiers/english.all.3class.distsim.crf.ser.gz ' \
+               '-outputFormat tabbedEntities -textFile {} > ../{}' \
+        .format(STANFORD_NER_FOLDER, JAVA_BIN_PATH, filename, out)
+
     if verbose:
-        debug_print('filename = {}'.format(filename), verbose)
-    entities = stanford_ner(filename, verbose)
-    print('\n'.join([entity[0].ljust(20) + '\t' + entity[1] for entity in entities]))
+        debug_print('Executing command = {}'.format(command), verbose)
+        java_process = Popen(command, stdout=stderr, shell=True)
+    else:
+        java_process = Popen(command, stdout=stderr, stderr=open(os.devnull, 'w'), shell=True)
+    java_process.wait()
+    assert not java_process.returncode, 'ERROR: Call to stanford_ner exited with a non-zero code status.'
+
+    if absolute_path is not None:
+        out = absolute_path + out
+
+    with open(out, 'r') as output_file:
+        results_str = output_file.readlines()
+    os.remove(out)
+
+    results = []
+    for res in results_str:
+        if len(res.strip()) > 0:
+            split_res = res.split('\t')
+            entity_name = split_res[0]
+            entity_type = split_res[1]
+
+            if len(entity_name) > 0 and len(entity_type) > 0:
+                results.append([entity_name.strip(), entity_type.strip()])
+
+    if verbose:
+        pickle.dump(results_str, open('out.pkl', 'wb'))
+        debug_print('wrote to out.pkl', verbose)
+    return results
+
+def main(text, verbose):
+    text = text
+    verbose = verbose
+    if type(text) is not str:
+        print('please provide string as text.')
+        exit(1)
+#     if verbose:
+#         debug_print('filename = {}'.format(filename), verbose)
+    entities = stanford_ner_text(text, verbose)
+    return entities
+
+# def main(args):
+#     arg_p = arg_parse().parse_args(args[1:])
+#     filename = arg_p.filename
+#     verbose = arg_p.verbose
+#     debug_print(arg_p, verbose)
+#     if filename is None:
+#         print('please provide a text file containing your input. Program will exit.')
+#         exit(1)
+#     if verbose:
+#         debug_print('filename = {}'.format(filename), verbose)
+#     entities = stanford_ner(filename, verbose)
+#     print('\n'.join([entity[0].ljust(20) + '\t' + entity[1] for entity in entities]))
 
 
-if __name__ == '__main__':
-    exit(main(argv))
+# if __name__ == '__main__':
+#     exit(main(argv))
