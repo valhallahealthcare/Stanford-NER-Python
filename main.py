@@ -65,7 +65,7 @@ def process_entity_relations(entity_relations_str, verbose=True):
 
 
 def stanford_ner(filename, verbose=True, absolute_path=None):
-    out = 'out.txt'
+    out = filename.split('.')[0] + '_out.txt'
 
     command = ''
     if absolute_path is not None:
