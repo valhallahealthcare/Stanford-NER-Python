@@ -36,6 +36,23 @@ sudo apt-get update
 sudo apt-get install oracle-java8-installer
 ```
 
+If your OS is MacOS, you can install it this way as of March 8 2021:
+```bash
+brew tap homebrew/cask
+brew tap homebrew/cask-versions
+brew install adaoptopenjdk/openjdk/adoptopenjdk8
+```
+
+Check which versions of java are available:
+```bash
+/usr/libexec/java-home -V
+```
+
+Select Java 8:
+```bash
+export JAVA_HOME=`/usr/libexec/java_home -v 1.8.0_282`
+```
+
 The code can be invoked either programmatically or through the command line. The program can be invoked with the following commands:
 
 ```bash
